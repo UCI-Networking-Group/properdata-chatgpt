@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:developer';
 
 import 'package:uuid/uuid.dart';
@@ -46,6 +47,19 @@ class ChatSettings {
         name = profile.name,
         model = profile.model,
         systemPrompt = profile.systemPrompt;
+
+  // JSON serialization
+  ChatSettings.fromJson(Map<String, dynamic> json)
+      : id = json['id'],
+        name = json['name'],
+        model = json['model'],
+        systemPrompt = json['systemPrompt'];
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'model': model,
+        'systemPrompt': systemPrompt,
+      };
 
   get isDefault => defaultProfiles.contains(this);
 
@@ -96,14 +110,13 @@ class ChatProvider with ChangeNotifier {
   bool _interruptFlag = false;
 
   ChatProvider(SharedPreferences prefs) {
+    // Load API key
     _apiKey = prefs.getString('api_key');
 
-    if (_apiKey == null || _apiKey == '') {
-      _apiKey = null;
-      log('API key is not set.');
-    } else {
-      log('API key loaded.');
-    }
+    // Load profiles
+    final profilesJson = prefs.getStringList('profiles');
+    profiles.addAll(
+        profilesJson?.map((e) => ChatSettings.fromJson(jsonDecode(e))) ?? []);
   }
 
   void resetAll() async {
@@ -130,6 +143,7 @@ class ChatProvider with ChangeNotifier {
     _apiKey = apiKey;
 
     log('API key is set.');
+    notifyListeners();
   }
 
   void createConversation() {
@@ -163,14 +177,26 @@ class ChatProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  void _saveProfiles() async {
+    final prefs = await SharedPreferences.getInstance();
+    final profilesJson = _profiles
+        .where((e) => !e.isDefault)
+        .map((e) => jsonEncode(e.toJson()))
+        .toList();
+    prefs.setStringList('profiles', profilesJson);
+  }
+
   void updateProfile(ChatSettings profile) {
     final index = _profiles.indexWhere((p) => p.id == profile.id);
 
     if (index != -1) {
       _profiles[index] = profile;
+      if (_currentProfile.id == profile.id) _currentProfile = profile;
     } else {
       _profiles.add(profile);
     }
+
+    _saveProfiles();
 
     notifyListeners();
   }
