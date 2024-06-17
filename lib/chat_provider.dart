@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:developer';
-import 'package:uuid/uuid.dart';
 
+import 'package:uuid/uuid.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:dart_openai/dart_openai.dart';
 
 class Message {
   final String role;
@@ -10,6 +12,18 @@ class Message {
   String content;
 
   Message({required this.role, required this.content}) : id = const Uuid().v7();
+
+  OpenAIChatCompletionChoiceMessageModel toOpenAIMessage() {
+    return OpenAIChatCompletionChoiceMessageModel(
+      role: OpenAIChatMessageRole.values.firstWhere(
+        (e) => e.toString().endsWith('.$role'),
+        orElse: () => OpenAIChatMessageRole.user,
+      ),
+      content: [
+        OpenAIChatCompletionChoiceMessageContentItemModel.text(content)
+      ],
+    );
+  }
 }
 
 class ChatSettings {
@@ -44,7 +58,7 @@ class ChatProvider with ChangeNotifier {
   List<ChatSettings> get profiles => _profiles;
   ChatSettings get currentProfile => _currentProfile;
 
-  List<Conversation> _conversations = [];
+  final List<Conversation> _conversations = [];
   Conversation? _currentConversation;
 
   List<Conversation> get conversations => _conversations;
@@ -61,6 +75,7 @@ class ChatProvider with ChangeNotifier {
       _apiKey = null;
       log('API key is not set.');
     } else {
+      OpenAI.apiKey = _apiKey!;
       log('API key loaded.');
     }
   }
@@ -68,7 +83,7 @@ class ChatProvider with ChangeNotifier {
   void setApiKey(String apiKey) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     prefs.setString('api_key', apiKey);
-    _apiKey = apiKey;
+    OpenAI.apiKey = _apiKey = apiKey;
 
     log('API key is set.');
   }
@@ -122,23 +137,52 @@ class ChatProvider with ChangeNotifier {
     addMessageToCurrentConversation(Message(role: 'user', content: content));
 
     if (_pendingMessage == null) {
+      final context = [..._currentConversation!.messages];
+
       _pendingMessage = Message(role: "assistant", content: "");
       addMessageToCurrentConversation(_pendingMessage!);
-      _updatePendingMessage();
+
+      _streamResponse(context);
     }
   }
 
-  Future<void> _updatePendingMessage() async {
+  Future<void> _streamResponse(List<Message> context) async {
     _pendingMessage!.content = '';
     notifyListeners();
 
-    // Simulate a response from the assistant
-    for (var character in 'This is a response.'.split('')) {
-      _pendingMessage!.content += character;
-      await Future.delayed(const Duration(milliseconds: 100));
-      notifyListeners();
+    final chatStream = OpenAI.instance.chat.createStream(
+      model: "gpt-3.5-turbo",
+      messages: context.map((m) => m.toOpenAIMessage()).toList(),
+    );
 
-      if (_interruptFlag) break;
+    final completer = Completer<bool>();
+
+    final subscriber = chatStream.listen(
+      (streamChatCompletion) {
+        if (_interruptFlag) {
+          completer.complete(false);
+          return;
+        }
+
+        final newContent = streamChatCompletion.choices.first.delta.content;
+        _pendingMessage!.content += newContent?.first?.text ?? '';
+        notifyListeners();
+      },
+      onDone: () {
+        completer.complete(true);
+      },
+      onError: (error) {
+        log('Error: $error');
+        completer.completeError(error);
+      },
+      cancelOnError: true,
+    );
+
+    final chatFinished = await completer.future;
+
+    if (!chatFinished) {
+      await subscriber.cancel();
+      log('Chat was interrupted.');
     }
 
     _pendingMessage = null;

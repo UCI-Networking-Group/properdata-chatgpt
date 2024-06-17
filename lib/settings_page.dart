@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import 'chat_provider.dart';
 
 class SettingsPage extends StatelessWidget {
