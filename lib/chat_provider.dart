@@ -31,8 +31,8 @@ class ChatSettings {
   final String model;
   final String systemPrompt;
 
-  static const defaultChatSettings =
-      ChatSettings(name: 'default', model: 'gpt-3.5-turbo', systemPrompt: '');
+  static const defaultChatSettings = ChatSettings(
+      name: 'gpt-3.5-turbo', model: 'gpt-3.5-turbo', systemPrompt: '');
 
   const ChatSettings({this.name = '', this.model = '', this.systemPrompt = ''});
 }
@@ -49,9 +49,15 @@ class ChatProvider with ChangeNotifier {
   String? _apiKey = '';
   String? get apiKey => _apiKey;
 
-  List<ChatSettings> _profiles = [
+  final List<ChatSettings> _profiles = [
     ChatSettings.defaultChatSettings,
-    ChatSettings(name: 'gpt-4o', model: 'gpt-4o', systemPrompt: ''),
+    const ChatSettings(name: 'gpt-4o', model: 'gpt-4o', systemPrompt: ''),
+    const ChatSettings(
+      name: 'ChatGPT Test',
+      model: 'gpt-4o',
+      systemPrompt:
+          'You are ChatGPT, a large language model trained by OpenAI.',
+    ),
   ];
   ChatSettings _currentProfile = ChatSettings.defaultChatSettings;
 
@@ -114,6 +120,7 @@ class ChatProvider with ChangeNotifier {
   }
 
   void setCurrentProfile(ChatSettings profile) {
+    log('Current profile set to ${profile.name}.');
     _currentProfile = profile;
     notifyListeners();
   }
@@ -150,9 +157,22 @@ class ChatProvider with ChangeNotifier {
     _pendingMessage!.content = '';
     notifyListeners();
 
+    final messages = context.map((m) => m.toOpenAIMessage()).toList();
+
+    // Add system prompt if available
+    if (_currentProfile.systemPrompt.isNotEmpty) {
+      log('System prompt: ${_currentProfile.systemPrompt}');
+
+      messages.insert(
+        0,
+        Message(role: 'system', content: _currentProfile.systemPrompt)
+            .toOpenAIMessage(),
+      );
+    }
+
     final chatStream = OpenAI.instance.chat.createStream(
-      model: "gpt-3.5-turbo",
-      messages: context.map((m) => m.toOpenAIMessage()).toList(),
+      model: _currentProfile.model,
+      messages: messages,
     );
 
     final completer = Completer<bool>();
