@@ -25,6 +25,17 @@ class Message {
       ],
     );
   }
+
+  // JSON serialization
+  Message.fromJson(Map<String, dynamic> json)
+      : role = json['role'],
+        id = json['id'],
+        content = json['content'];
+  Map<String, dynamic> toJson() => {
+        'role': role,
+        'id': id,
+        'content': content,
+      };
 }
 
 class ChatSettings {
@@ -85,6 +96,18 @@ class Conversation {
   final List<Message> messages;
 
   Conversation({required this.id, required this.title, required this.messages});
+
+  // JSON serialization
+  Conversation.fromJson(Map<String, dynamic> json)
+      : id = json['id'],
+        title = json['title'],
+        messages =
+            (json['messages'] as List).map((e) => Message.fromJson(e)).toList();
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'title': title,
+        'messages': messages.map((e) => e.toJson()).toList(),
+      };
 }
 
 class ChatProvider with ChangeNotifier {
@@ -116,7 +139,14 @@ class ChatProvider with ChangeNotifier {
     // Load profiles
     final profilesJson = prefs.getStringList('profiles');
     profiles.addAll(
-        profilesJson?.map((e) => ChatSettings.fromJson(jsonDecode(e))) ?? []);
+      profilesJson?.map((e) => ChatSettings.fromJson(jsonDecode(e))) ?? [],
+    );
+
+    // Load conversations
+    final conversationsJson = prefs.getStringList('conversations');
+    _conversations.addAll(
+      conversationsJson?.map((e) => Conversation.fromJson(jsonDecode(e))) ?? [],
+    );
   }
 
   void resetAll() async {
@@ -135,6 +165,22 @@ class ChatProvider with ChangeNotifier {
     _interruptFlag = false;
 
     notifyListeners();
+  }
+
+  void _saveProfiles() async {
+    final prefs = await SharedPreferences.getInstance();
+    final profilesJson = _profiles
+        .where((e) => !e.isDefault)
+        .map((e) => jsonEncode(e.toJson()))
+        .toList();
+    prefs.setStringList('profiles', profilesJson);
+  }
+
+  void _saveConversations() async {
+    final prefs = await SharedPreferences.getInstance();
+    final conversationsJson =
+        _conversations.map((e) => jsonEncode(e.toJson())).toList();
+    prefs.setStringList('conversations', conversationsJson);
   }
 
   void setApiKey(String apiKey) async {
@@ -168,6 +214,9 @@ class ChatProvider with ChangeNotifier {
 
     _conversations.add(newConversation);
     _currentConversation = newConversation;
+
+    _saveConversations();
+
     notifyListeners();
   }
 
@@ -175,15 +224,6 @@ class ChatProvider with ChangeNotifier {
     log('Current profile set to ${profile.name}');
     _currentProfile = profile;
     notifyListeners();
-  }
-
-  void _saveProfiles() async {
-    final prefs = await SharedPreferences.getInstance();
-    final profilesJson = _profiles
-        .where((e) => !e.isDefault)
-        .map((e) => jsonEncode(e.toJson()))
-        .toList();
-    prefs.setStringList('profiles', profilesJson);
   }
 
   void updateProfile(ChatSettings profile) {
@@ -223,6 +263,7 @@ class ChatProvider with ChangeNotifier {
 
   void addMessageToCurrentConversation(Message message) {
     _currentConversation?.messages.add(message);
+    _saveConversations();
     notifyListeners();
   }
 
@@ -308,6 +349,7 @@ class ChatProvider with ChangeNotifier {
       log('Chat was interrupted.');
     }
 
+    _saveConversations();
     _pendingMessage = null;
     _interruptFlag = false;
     notifyListeners();
