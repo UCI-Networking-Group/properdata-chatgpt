@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:simple_llm_gui/profile_management_page.dart';
 
 import 'chat_provider.dart';
 import 'settings_page.dart';
@@ -87,6 +88,17 @@ class ProfileSelectionWidget extends StatelessWidget {
             .toList();
 
         return Row(children: [
+          IconButton(
+            icon: const Icon(Icons.app_registration),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ProfileManagementPage(),
+                ),
+              );
+            },
+          ),
           Expanded(
             child: DropdownButton<ChatSettings>(
               value: chatProvider.currentProfile,

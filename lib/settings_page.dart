@@ -6,6 +6,8 @@ import 'chat_provider.dart';
 class SettingsPage extends StatelessWidget {
   final TextEditingController _apiKeyController = TextEditingController();
 
+  SettingsPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     _apiKeyController.text = context.read<ChatProvider>().apiKey ?? '';

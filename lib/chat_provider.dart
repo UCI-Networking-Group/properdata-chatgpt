@@ -27,14 +27,42 @@ class Message {
 }
 
 class ChatSettings {
+  final String id;
   final String name;
   final String model;
   final String systemPrompt;
 
-  static const defaultChatSettings = ChatSettings(
-      name: 'gpt-3.5-turbo', model: 'gpt-3.5-turbo', systemPrompt: '');
+  const ChatSettings.createConst(
+      {required this.name,
+      required this.model,
+      this.systemPrompt = '',
+      required this.id});
 
-  const ChatSettings({this.name = '', this.model = '', this.systemPrompt = ''});
+  ChatSettings(
+      {this.name = '', this.model = '', this.systemPrompt = '', String? id})
+      : id = id ?? const Uuid().v7();
+  ChatSettings.clone(ChatSettings profile, {bool resetUuid = false})
+      : id = resetUuid ? const Uuid().v7() : profile.id,
+        name = profile.name,
+        model = profile.model,
+        systemPrompt = profile.systemPrompt;
+
+  get isDefault => defaultProfiles.contains(this);
+
+  static const List<ChatSettings> defaultProfiles = [
+    ChatSettings.createConst(
+        name: 'gpt-4o',
+        model: 'gpt-4o',
+        id: '00000000-0000-0000-0000-000000000000'),
+    ChatSettings.createConst(
+        name: 'gpt-4-turbo',
+        model: 'gpt-4-turbo',
+        id: '00000000-0000-0000-0000-000000000001'),
+    ChatSettings.createConst(
+        name: 'gpt-3.5-turbo',
+        model: 'gpt-3.5-turbo',
+        id: '00000000-0000-0000-0000-000000000002'),
+  ];
 }
 
 class Conversation {
@@ -49,17 +77,10 @@ class ChatProvider with ChangeNotifier {
   String? _apiKey = '';
   String? get apiKey => _apiKey;
 
-  final List<ChatSettings> _profiles = [
-    ChatSettings.defaultChatSettings,
-    const ChatSettings(name: 'gpt-4o', model: 'gpt-4o', systemPrompt: ''),
-    const ChatSettings(
-      name: 'ChatGPT Test',
-      model: 'gpt-4o',
-      systemPrompt:
-          'You are ChatGPT, a large language model trained by OpenAI.',
-    ),
-  ];
-  ChatSettings _currentProfile = ChatSettings.defaultChatSettings;
+  final modelList = ['gpt-4o', 'gpt-4-turbo', 'gpt-3.5-turbo'];
+
+  final List<ChatSettings> _profiles = [...ChatSettings.defaultProfiles];
+  ChatSettings _currentProfile = ChatSettings.defaultProfiles[0];
 
   List<ChatSettings> get profiles => _profiles;
   ChatSettings get currentProfile => _currentProfile;
@@ -120,8 +141,34 @@ class ChatProvider with ChangeNotifier {
   }
 
   void setCurrentProfile(ChatSettings profile) {
-    log('Current profile set to ${profile.name}.');
+    log('Current profile set to ${profile.name}');
     _currentProfile = profile;
+    notifyListeners();
+  }
+
+  void updateProfile(ChatSettings profile) {
+    final index = _profiles.indexWhere((p) => p.id == profile.id);
+
+    if (index != -1) {
+      _profiles[index] = profile;
+    } else {
+      _profiles.add(profile);
+    }
+
+    notifyListeners();
+  }
+
+  void removeProfile(String id) {
+    if (_profiles.length == 1) {
+      log('Cannot remove the last profile.');
+      return;
+    }
+
+    if (_currentProfile.id == id) {
+      _currentProfile = profiles[0];
+    }
+
+    _profiles.removeWhere((p) => p.id == id);
     notifyListeners();
   }
 
