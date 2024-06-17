@@ -38,7 +38,11 @@ class ConversationBox extends StatelessWidget {
     return Consumer<ChatProvider>(
       builder: (context, chatProvider, child) {
         if (chatProvider.currentConversation == null) {
-          return const Center(child: Text('No conversation selected.'));
+          return Center(
+            child: Text((chatProvider.apiKey == null)
+                ? 'API key not set. Please set an API key in the settings.'
+                : 'No conversation selected.'),
+          );
         }
 
         final itemCount = chatProvider.currentConversation!.messages.length;

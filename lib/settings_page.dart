@@ -36,6 +36,37 @@ class SettingsPage extends StatelessWidget {
               ),
             ),
           ),
+          ListTile(
+            title: const Text('Reset Everything'),
+            onTap: () {
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Reset Everything'),
+                  content: const Text(
+                    'Are you sure you want to reset all settings? '
+                    'This will clear all profiles and conversations.',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        context.read<ChatProvider>().resetAll();
+                        Navigator.of(context)
+                            .popUntil((route) => route.isFirst);
+                      },
+                      child: const Text('Yes'),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      child: const Text('No'),
+                    ),
+                  ],
+                ),
+              );
+            },
+          )
         ],
       ),
     );

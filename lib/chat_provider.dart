@@ -102,15 +102,32 @@ class ChatProvider with ChangeNotifier {
       _apiKey = null;
       log('API key is not set.');
     } else {
-      OpenAI.apiKey = _apiKey!;
       log('API key loaded.');
     }
+  }
+
+  void resetAll() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.clear();
+
+    _apiKey = null;
+
+    _profiles.clear();
+    _profiles.addAll(ChatSettings.defaultProfiles);
+    _currentProfile = _profiles[0];
+
+    _conversations.clear();
+    _currentConversation = null;
+    _pendingMessage = null;
+    _interruptFlag = false;
+
+    notifyListeners();
   }
 
   void setApiKey(String apiKey) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     prefs.setString('api_key', apiKey);
-    OpenAI.apiKey = _apiKey = apiKey;
+    _apiKey = apiKey;
 
     log('API key is set.');
   }
@@ -204,6 +221,14 @@ class ChatProvider with ChangeNotifier {
     _pendingMessage!.content = '';
     notifyListeners();
 
+    if (_apiKey == null) {
+      log('API key is not set.');
+      _pendingMessage!.content = '[Error] API key is not set.';
+      return;
+    }
+
+    OpenAI.apiKey = _apiKey!;
+
     final messages = context.map((m) => m.toOpenAIMessage()).toList();
 
     // Add system prompt if available
@@ -245,7 +270,12 @@ class ChatProvider with ChangeNotifier {
       cancelOnError: true,
     );
 
-    final chatFinished = await completer.future;
+    final chatFinished = await completer.future.onError((error, stackTrace) {
+      log('API error: $error');
+      // TODO: show the error elsewhere
+      _pendingMessage!.content = '[Error] $error';
+      return false;
+    });
 
     if (!chatFinished) {
       await subscriber.cancel();
