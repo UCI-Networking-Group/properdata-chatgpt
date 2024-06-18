@@ -220,6 +220,14 @@ class ChatProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  void deleteConversation(String id) {
+    _conversations.removeWhere((conv) => conv.id == id);
+    if (_currentConversation?.id == id) _currentConversation = null;
+
+    _saveConversations();
+    notifyListeners();
+  }
+
   void setCurrentProfile(ChatSettings profile) {
     log('Current profile set to ${profile.name}');
     _currentProfile = profile;

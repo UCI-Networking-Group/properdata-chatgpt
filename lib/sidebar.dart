@@ -64,6 +64,12 @@ class ConversationList extends StatelessWidget {
                 selected:
                     identical(chatProvider.currentConversation, conversation),
                 selectedTileColor: Colors.grey[300],
+                trailing: IconButton(
+                  icon: const Icon(Icons.delete_forever_rounded),
+                  onPressed: () {
+                    chatProvider.deleteConversation(conversation.id);
+                  },
+                ),
               ),
             );
           },
