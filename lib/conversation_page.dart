@@ -39,7 +39,7 @@ class ConversationBox extends StatelessWidget {
       builder: (context, chatProvider, child) {
         if (chatProvider.currentConversation == null) {
           return Center(
-            child: Text((chatProvider.apiKey == null)
+            child: Text((chatProvider.apiKey == '')
                 ? 'API key not set. Please set an API key in the settings.'
                 : 'No conversation selected.'),
           );

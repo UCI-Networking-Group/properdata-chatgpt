@@ -10,7 +10,7 @@ class SettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    _apiKeyController.text = context.read<ChatProvider>().apiKey ?? '';
+    _apiKeyController.text = context.read<ChatProvider>().apiKey;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),

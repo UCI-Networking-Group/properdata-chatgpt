@@ -111,8 +111,8 @@ class Conversation {
 }
 
 class ChatProvider with ChangeNotifier {
-  String? _apiKey = '';
-  String? get apiKey => _apiKey;
+  String _apiKey = '';
+  String get apiKey => _apiKey;
 
   final modelList = ['gpt-4o', 'gpt-4-turbo', 'gpt-3.5-turbo'];
 
@@ -134,7 +134,7 @@ class ChatProvider with ChangeNotifier {
 
   ChatProvider(SharedPreferences prefs) {
     // Load API key
-    _apiKey = prefs.getString('api_key');
+    _apiKey = prefs.getString('api_key') ?? '';
 
     // Load profiles
     final profilesJson = prefs.getStringList('profiles');
@@ -153,7 +153,7 @@ class ChatProvider with ChangeNotifier {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     prefs.clear();
 
-    _apiKey = null;
+    _apiKey = '';
 
     _profiles.clear();
     _profiles.addAll(ChatSettings.defaultProfiles);
@@ -296,13 +296,7 @@ class ChatProvider with ChangeNotifier {
     _pendingMessage!.content = '';
     notifyListeners();
 
-    if (_apiKey == null) {
-      log('API key is not set.');
-      _pendingMessage!.content = '[Error] API key is not set.';
-      return;
-    }
-
-    OpenAI.apiKey = _apiKey!;
+    OpenAI.apiKey = _apiKey;
 
     final messages = context.map((m) => m.toOpenAIMessage()).toList();
 
