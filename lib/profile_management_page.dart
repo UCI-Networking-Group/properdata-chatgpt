@@ -1,4 +1,3 @@
-import 'package:dart_openai/dart_openai.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -58,7 +57,12 @@ class ProfileCard extends StatelessWidget {
     final buttonRow = <Widget>[
       TextButton(
         child: const Text('New Chat'),
-        onPressed: () {/* ... */},
+        onPressed: () {
+          context.read<ChatProvider>()
+            ..setCurrentProfile(profile)
+            ..createConversation();
+          Navigator.pop(context);
+        },
       )
     ];
 
