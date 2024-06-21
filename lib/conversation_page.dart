@@ -1,12 +1,9 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_list_view/flutter_list_view.dart';
-import 'package:markdown_widget/markdown_widget.dart';
 
 import 'chat_provider.dart';
+import 'conversation_list.dart';
 
 class ConversationPage extends StatelessWidget {
   const ConversationPage({super.key});
@@ -18,7 +15,7 @@ class ConversationPage extends StatelessWidget {
         children: [
           const Expanded(
             flex: 4,
-            child: ConversationBox(),
+            child: ConversationList(),
           ),
           Padding(
             padding: const EdgeInsets.all(8.0),
@@ -28,80 +25,6 @@ class ConversationPage extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class ConversationBox extends StatelessWidget {
-  const ConversationBox({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<ChatProvider>(
-      builder: (context, chatProvider, child) {
-        if (chatProvider.currentConversation == null) {
-          return Center(
-            child: Text((chatProvider.apiKey == '')
-                ? 'API key not set. Please set an API key in the settings.'
-                : 'No conversation selected.'),
-          );
-        }
-
-        final itemCount = chatProvider.currentConversation!.messages.length;
-
-        return FlutterListView(
-          reverse: true,
-          delegate: FlutterListViewDelegate(
-            (BuildContext context, int index) {
-              final message = chatProvider
-                  .currentConversation!.messages[itemCount - 1 - index];
-
-              var alignment = Alignment.center;
-              var color = Colors.black;
-              Widget? leading;
-
-              switch (message.role) {
-                case 'user':
-                  leading = const Column(children: []);
-                  alignment = Alignment.centerRight;
-                  color = Colors.blue[100]!;
-                  break;
-                case 'assistant':
-                  leading = const Icon(Icons.auto_awesome);
-                  alignment = Alignment.centerLeft;
-                  color = Colors.transparent;
-                  break;
-                default:
-                  log('Unknown role: ${message.role}');
-              }
-
-              return ListTile(
-                leading: leading,
-                titleAlignment: ListTileTitleAlignment.top,
-                title: Align(
-                  alignment: alignment,
-                  child: Container(
-                    padding: const EdgeInsets.fromLTRB(10.0, 4.0, 10.0, 4.0),
-                    decoration: BoxDecoration(
-                      color: color,
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
-                    child: MarkdownBlock(
-                      data: message.content,
-                      //style: const TextStyle(color: Colors.white),
-                    ),
-                  ),
-                ),
-              );
-            },
-            childCount: chatProvider.currentConversation!.messages.length,
-            keepPosition: true,
-            keepPositionOffset: 80,
-            onItemKey: (index) => chatProvider
-                .currentConversation!.messages[itemCount - 1 - index].id,
-          ),
-        );
-      },
     );
   }
 }
