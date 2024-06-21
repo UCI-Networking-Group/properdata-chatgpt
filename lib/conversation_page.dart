@@ -99,10 +99,12 @@ class _MessageInputBarState extends State<MessageInputBar> {
       context.watch<ChatProvider>().hasPendingMessage
           ? IconButton(
               icon: const Icon(Icons.stop_circle),
+              tooltip: 'Interrupt',
               onPressed: _interrupt,
             )
           : IconButton(
               icon: const Icon(Icons.send),
+              tooltip: 'Send',
               onPressed: _send,
             ),
     ]);

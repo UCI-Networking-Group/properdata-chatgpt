@@ -66,6 +66,7 @@ class ConversationList extends StatelessWidget {
                 selectedTileColor: Colors.grey[300],
                 trailing: IconButton(
                   icon: const Icon(Icons.delete_forever_rounded),
+                  tooltip: 'Delete',
                   onPressed: () {
                     chatProvider.deleteConversation(conversation.id);
                   },
@@ -96,6 +97,7 @@ class ProfileSelectionWidget extends StatelessWidget {
         return Row(children: [
           IconButton(
             icon: const Icon(Icons.app_registration),
+            tooltip: 'Profile Management',
             onPressed: () {
               Navigator.push(
                 context,
@@ -116,6 +118,7 @@ class ProfileSelectionWidget extends StatelessWidget {
           ),
           IconButton(
             icon: const Icon(Icons.add),
+            tooltip: 'New Chat',
             onPressed: () {
               chatProvider.createConversation();
             },
