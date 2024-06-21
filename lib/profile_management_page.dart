@@ -133,6 +133,7 @@ class ChatSettingsDialogState extends State<ChatSettingsDialog> {
       key: _formKey,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           TextFormField(
             initialValue: widget.profile.name,
