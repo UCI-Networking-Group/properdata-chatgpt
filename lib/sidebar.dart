@@ -54,28 +54,56 @@ class ConversationList extends StatelessWidget {
             final conversation =
                 chatProvider.conversations[conversationCount - 1 - index];
 
-            return Material(
-              color: Colors.transparent,
-              child: ListTile(
-                title: Text(conversation.title),
-                onTap: () {
-                  chatProvider.setCurrentConversation(conversation.id);
-                },
-                selected:
-                    identical(chatProvider.currentConversation, conversation),
-                selectedTileColor: Colors.grey[300],
-                trailing: IconButton(
-                  icon: const Icon(Icons.delete_forever_rounded),
-                  tooltip: 'Delete',
-                  onPressed: () {
-                    chatProvider.deleteConversation(conversation.id);
-                  },
-                ),
-              ),
-            );
+            return ConversationListTile(conversation: conversation);
           },
         );
       },
+    );
+  }
+}
+
+class ConversationListTile extends StatefulWidget {
+  final Conversation conversation;
+  const ConversationListTile({super.key, required this.conversation});
+
+  @override
+  State<ConversationListTile> createState() => _ConversationListTileState();
+}
+
+class _ConversationListTileState extends State<ConversationListTile> {
+  bool showButton = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: MouseRegion(
+        onEnter: (_) => setState(() => showButton = true),
+        onExit: (_) => setState(() => showButton = false),
+        child: ListTile(
+          contentPadding: const EdgeInsets.fromLTRB(16.0, 0.0, 8.0, 0.0),
+          title: Text(widget.conversation.title),
+          onTap: () => context
+              .read<ChatProvider>()
+              .setCurrentConversation(widget.conversation.id),
+          selected: identical(context.watch<ChatProvider>().currentConversation,
+              widget.conversation),
+          selectedTileColor: Colors.grey[300],
+          trailing: Visibility(
+            maintainSize: true,
+            maintainAnimation: true,
+            maintainState: true,
+            visible: showButton,
+            child: IconButton(
+              icon: const Icon(Icons.delete_forever_rounded),
+              tooltip: 'Delete',
+              onPressed: () => context
+                  .read<ChatProvider>()
+                  .deleteConversation(widget.conversation.id),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
