@@ -23,7 +23,7 @@ class App extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'ChatGPT Client',
+      title: 'ProperData ChatGPT',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
@@ -37,7 +37,7 @@ class MainScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Simple LLM GUI'),
+        title: const Text('ProperData ChatGPT'),
       ),
       body: const Row(
         children: [
